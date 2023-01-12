@@ -1,0 +1,78 @@
+﻿@page "/"
+@using System.Timers;
+@inject IJSRuntime js;
+@if (Min != null && Sec != null)
+{
+    <PageTitle>@Min : @Sec</PageTitle>
+}
+else
+{
+    <PageTitle>Pomodoro Timer</PageTitle>
+}
+<div style="background-color:#31363B;height:100vh;padding:20px">
+    <h1 class="fw-bold text-white">Pomodoro Timer</h1>
+    <MatDivider Style="color:#fff"></MatDivider>
+    <div class="d-flex justify-content-center flex-column align-items-center py-3">
+        <p class="bg-danger fs-1 fw-bold m-0">@Min</p>
+        <p class="bg-dark text-white fs-1 fw-bold m-0">@Sec</p>
+        <img src="images/pomodoro.jpg" />
+        <div class="d-flex justify-content-center align-items-center mt-3">
+            <MatButton OnClick="@start" Raised="true" Style="margin-right:15px;background:red">Start</MatButton>
+            <MatButton OnClick="@breakTimer" Raised="true" Style="background:red">Break</MatButton>
+
+        </div>
+    </div>
+    <audio id="player" style="visibility:hidden" autoplay>
+        <source id="playerSource" src="" />
+    </audio>
+</div>
+
+@code {
+    async Task playAudioFile()
+    {
+        await js.InvokeVoidAsync("PlayAudioFile", "/ring.mp3");
+    }
+
+    async Task notification()
+    {
+        await js.InvokeVoidAsync("notif");
+    }
+
+    Timer timer = new Timer();
+    public int Counter { get; set; } = 0;
+    public int Min { get; set; } = 25;
+    public int Sec { get; set; } = 0;
+    private void OnTimedEvent(object source, ElapsedEventArgs e)
+    {
+
+        Console.WriteLine(Counter);
+        Counter -= 1;
+        Min = (int)(Counter / 60);
+        Sec = (int)(Counter % 60);
+        if (Counter <= 0)
+        {
+            timer.Stop();
+            playAudioFile();
+            notification();
+        }
+        StateHasChanged();
+    }
+    protected override void OnInitialized()
+    {
+        timer.Elapsed += OnTimedEvent;
+        timer.Interval = 1000;
+        base.OnInitialized();
+    }
+    private void start()
+    {
+        timer.Stop();
+        Counter = (int)(25 * 60);
+        timer.Start();
+    }
+    private void breakTimer()
+    {
+        timer.Stop();
+        Counter = (int)(5 * 60);
+        timer.Start();
+    }
+}
